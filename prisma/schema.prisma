@@ -33,3 +33,26 @@ model User {
   CreatedAt       DateTime       @default(now())
   UpdatedAt       DateTime       @updatedAt
 }
+
+model Category {
+  CategoryID   Int       @id @default(autoincrement())
+  Name         String
+  CreatedAt    DateTime  @default(now())
+  UpdatedAt    DateTime  @updatedAt
+  Books        Book[]
+}
+
+model Book {
+  BookID       Int       @id @default(autoincrement())
+  Title        String
+  Description  String
+  ImageUrl     String
+  ReleaseYear  Int
+  Price        String
+  TotalPage    Int
+  Thickness    String
+  CreatedAt    DateTime  @default(now())
+  UpdatedAt    DateTime  @updatedAt
+  CategoryID   Int
+  Category     Category  @relation(fields: [CategoryID], references: [CategoryID])
+}
