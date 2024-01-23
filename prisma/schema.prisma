@@ -42,17 +42,24 @@ model Category {
   Books        Book[]
 }
 
+enum Thickness {
+  tipis
+  sedang
+  tebal
+}
+
 model Book {
   BookID       Int       @id @default(autoincrement())
-  Title        String
+  Title        String    @unique
   Description  String
   ImageUrl     String
   ReleaseYear  Int
   Price        String
   TotalPage    Int
-  Thickness    String
+  Thickness    Thickness
   CreatedAt    DateTime  @default(now())
   UpdatedAt    DateTime  @updatedAt
   CategoryID   Int
   Category     Category  @relation(fields: [CategoryID], references: [CategoryID])
 }
+
