@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const AuthController = require("../controllers/AuthController");
-const PasswordResetController = require("../controllers/PasswordResetController");
+const AuthController = require("../controllers/authController");
+const PasswordResetController = require("../controllers/passwordResetController");
 
 const { rateLimit } = require("express-rate-limit");
 
