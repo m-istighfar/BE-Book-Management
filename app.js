@@ -2,7 +2,6 @@ require("dotenv").config();
 
 const redis = require("./config/redis");
 const prisma = require("./config/prisma");
-const cors = require("cors");
 
 const express = require("express");
 
@@ -11,11 +10,13 @@ const errorFormatter = require("./middleware/errorFormatter");
 const applyMiddleware = require("./middleware/index");
 
 const authRoutes = require("./routes/authRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 
 const app = express();
 applyMiddleware(app);
 
 app.use("/auth", authRoutes);
+app.use("/categories", categoryRoutes);
 
 app.use(errorFormatter);
 

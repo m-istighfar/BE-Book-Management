@@ -36,7 +36,7 @@ model User {
 
 model Category {
   CategoryID   Int       @id @default(autoincrement())
-  Name         String
+  Name         String    @unique
   CreatedAt    DateTime  @default(now())
   UpdatedAt    DateTime  @updatedAt
   Books        Book[]
