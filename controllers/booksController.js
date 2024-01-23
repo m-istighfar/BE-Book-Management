@@ -32,7 +32,7 @@ const determineThickness = (totalPage) => {
 };
 
 const invalidateBooksCache = async () => {
-  const keys = await redis.keys("getBooks:*");
+  const keys = await redis.keys("getBooks");
   for (const key of keys) {
     await redis.del(key);
   }
