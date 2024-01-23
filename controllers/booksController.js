@@ -2,6 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const Joi = require("joi");
 const { successResponse, errorResponse } = require("../utils/response");
 const prisma = new PrismaClient();
+const redis = require("../config/redis");
 
 const validateBook = (data) => {
   const schema = Joi.object({
@@ -30,82 +31,106 @@ const determineThickness = (totalPage) => {
   }
 };
 
+const invalidateBooksCache = async () => {
+  const keys = await redis.keys("getBooks:*");
+  for (const key of keys) {
+    await redis.del(key);
+  }
+};
+
 exports.getBooks = async (req, res) => {
   try {
-    const {
-      title,
-      minYear,
-      maxYear,
-      minPage,
-      maxPage,
-      sortByTitle,
-      page,
-      limit,
-    } = req.query;
+    const queryParams = JSON.stringify(req.query);
+    const cacheKey = `getBooks:${queryParams}`;
 
-    let queryConditions = {};
+    redis.get(cacheKey, async (error, cachedData) => {
+      if (error) throw error;
 
-    if (title) {
-      queryConditions.Title = {
-        contains: title,
-        mode: "insensitive",
-      };
-    }
-    if (minYear) {
-      queryConditions.ReleaseYear = {
-        ...queryConditions.ReleaseYear,
-        gte: parseInt(minYear),
-      };
-    }
-    if (maxYear) {
-      queryConditions.ReleaseYear = {
-        ...queryConditions.ReleaseYear,
-        lte: parseInt(maxYear),
-      };
-    }
-    if (minPage) {
-      queryConditions.TotalPage = {
-        ...queryConditions.TotalPage,
-        gte: parseInt(minPage),
-      };
-    }
-    if (maxPage) {
-      queryConditions.TotalPage = {
-        ...queryConditions.TotalPage,
-        lte: parseInt(maxPage),
-      };
-    }
+      if (cachedData) {
+        return successResponse(
+          res,
+          "Books fetched from cache",
+          JSON.parse(cachedData)
+        );
+      } else {
+        const {
+          title,
+          minYear,
+          maxYear,
+          minPage,
+          maxPage,
+          sortByTitle,
+          page,
+          limit,
+        } = req.query;
 
-    let orderByCondition = {};
-    if (sortByTitle) {
-      orderByCondition.Title = sortByTitle.toLowerCase();
-    }
+        let queryConditions = {};
 
-    const pageNumber = parseInt(page) || 1;
-    const pageSize = parseInt(limit) || 10;
-    const offset = (pageNumber - 1) * pageSize;
+        if (title) {
+          queryConditions.Title = {
+            contains: title,
+            mode: "insensitive",
+          };
+        }
+        if (minYear) {
+          queryConditions.ReleaseYear = {
+            ...queryConditions.ReleaseYear,
+            gte: parseInt(minYear),
+          };
+        }
+        if (maxYear) {
+          queryConditions.ReleaseYear = {
+            ...queryConditions.ReleaseYear,
+            lte: parseInt(maxYear),
+          };
+        }
+        if (minPage) {
+          queryConditions.TotalPage = {
+            ...queryConditions.TotalPage,
+            gte: parseInt(minPage),
+          };
+        }
+        if (maxPage) {
+          queryConditions.TotalPage = {
+            ...queryConditions.TotalPage,
+            lte: parseInt(maxPage),
+          };
+        }
 
-    const books = await prisma.book.findMany({
-      where: queryConditions,
-      orderBy: orderByCondition,
-      skip: offset,
-      take: pageSize,
+        let orderByCondition = {};
+        if (sortByTitle) {
+          orderByCondition.Title = sortByTitle.toLowerCase();
+        }
+
+        const pageNumber = parseInt(page) || 1;
+        const pageSize = parseInt(limit) || 10;
+        const offset = (pageNumber - 1) * pageSize;
+
+        const books = await prisma.book.findMany({
+          where: queryConditions,
+          orderBy: orderByCondition,
+          skip: offset,
+          take: pageSize,
+        });
+
+        const totalRecords = await prisma.book.count({
+          where: queryConditions,
+        });
+
+        const totalPages = Math.ceil(totalRecords / pageSize);
+
+        const response = {
+          totalRecords,
+          books,
+          currentPage: pageNumber,
+          totalPages,
+        };
+
+        redis.setex(cacheKey, 3600, JSON.stringify(response));
+
+        return successResponse(res, "Books fetched successfully", response);
+      }
     });
-
-    const totalRecords = await prisma.book.count({
-      where: queryConditions,
-    });
-
-    const totalPages = Math.ceil(totalRecords / pageSize);
-
-    const response = {
-      totalRecords,
-      books,
-      currentPage: pageNumber,
-      totalPages,
-    };
-
-    successResponse(res, "Books fetched successfully", response);
   } catch (error) {
     errorResponse(res, "Error fetching books: " + error.message, 500);
   }
@@ -174,6 +199,7 @@ exports.createBook = async (req, res) => {
       },
     });
 
+    await invalidateBooksCache();
     successResponse(res, "Book created successfully", newBook, 201);
   } catch (error) {
     errorResponse(res, "Error creating book: " + error.message, 500);
@@ -238,6 +264,7 @@ exports.updateBook = async (req, res) => {
       },
     });
 
+    await invalidateBooksCache();
     successResponse(res, "Book updated successfully", updatedBook);
   } catch (error) {
     errorResponse(res, "Error updating book: " + error.message, 500);
@@ -259,6 +286,7 @@ exports.deleteBook = async (req, res) => {
       where: { BookID: parseInt(id) },
     });
 
+    await invalidateBooksCache();
     successResponse(res, "Book deleted successfully");
   } catch (error) {
     errorResponse(res, "Error deleting book: " + error.message, 500);
