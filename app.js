@@ -1,7 +1,7 @@
 require("dotenv").config();
 
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const redis = require("./config/redis");
+const prisma = require("./config/prisma");
 const cors = require("cors");
 
 const express = require("express");
