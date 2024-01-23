@@ -11,12 +11,14 @@ const applyMiddleware = require("./middleware/index");
 
 const authRoutes = require("./routes/authRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
+const booksRoutes = require("./routes/booksRoutes");
 
 const app = express();
 applyMiddleware(app);
 
 app.use("/auth", authRoutes);
 app.use("/categories", categoryRoutes);
+app.use("/books", booksRoutes);
 
 app.use(errorFormatter);
 
