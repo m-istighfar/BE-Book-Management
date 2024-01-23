@@ -36,9 +36,6 @@ router.post(
   PasswordResetController.requestPasswordReset
 );
 
-router.post(
-  "/reset-password/:resetToken",
-  PasswordResetController.resetPassword
-);
+router.post("/reset-password", PasswordResetController.resetPassword);
 
 module.exports = router;

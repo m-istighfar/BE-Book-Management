@@ -18,9 +18,22 @@ const validateEmail = (email) => {
   return schema.validate(email);
 };
 
-const validatePassword = (password) => {
-  const schema = Joi.string().min(6).required();
-  return schema.validate(password);
+const validateResetPassword = (password, verificationCode) => {
+  const passwordSchema = Joi.string().min(6).required();
+
+  const verificationCodeSchema = Joi.string().required();
+
+  const passwordValidation = passwordSchema.validate(password);
+  if (passwordValidation.error) {
+    return { error: passwordValidation.error };
+  }
+
+  const codeValidation = verificationCodeSchema.validate(verificationCode);
+  if (codeValidation.error) {
+    return { error: codeValidation.error };
+  }
+
+  return { error: null };
 };
 
 const requestPasswordReset = async (req, res) => {
@@ -38,54 +51,52 @@ const requestPasswordReset = async (req, res) => {
     return errorResponse(res, "No account with that email address exists.");
   }
 
-  const resetToken = crypto.randomBytes(20).toString("hex");
+  const verificationCode = Math.floor(
+    100000 + Math.random() * 900000
+  ).toString();
   const resetPasswordExpires = new Date(Date.now() + 3600000);
 
   await prisma.userAuth.update({
     where: { UserAuthID: userAuth.UserAuthID },
     data: {
-      ResetPasswordToken: resetToken,
+      VerificationCode: verificationCode,
       ResetPasswordExpires: resetPasswordExpires,
     },
   });
 
   const { success, error: mailError } = await sendPasswordResetEmail(
     email,
-    resetToken
+    verificationCode
   );
 
   if (!success) {
-    return errorResponse(res, "Failed to send reset email.", 500);
+    return errorResponse(res, "Failed to send verification code.", 500);
   }
 
-  return successResponse(res, "Password reset email sent.");
+  return successResponse(res, "Password reset verification code sent.");
 };
 
 const resetPassword = async (req, res) => {
-  const { resetToken } = req.params;
-  const { newPassword, confirmPassword } = req.body;
-
-  const validationResult = validatePassword(newPassword);
-  if (validationResult.error) {
-    return errorResponse(res, "Invalid password format");
-  }
-
-  if (newPassword !== confirmPassword) {
-    return errorResponse(res, "Password confirmation does not match");
-  }
+  const { verificationCode, newPassword, confirmPassword } = req.body;
 
   const userAuth = await prisma.userAuth.findFirst({
     where: {
-      ResetPasswordToken: resetToken,
+      VerificationCode: verificationCode,
       ResetPasswordExpires: { gt: new Date() },
     },
   });
 
   if (!userAuth) {
-    return errorResponse(
-      res,
-      "Password reset token is invalid or has expired."
-    );
+    return errorResponse(res, "Verification code is invalid or has expired.");
+  }
+
+  const validationResult = validateResetPassword(newPassword, verificationCode);
+  if (validationResult.error) {
+    return errorResponse(res, validationResult.error.details[0].message);
+  }
+
+  if (newPassword !== confirmPassword) {
+    return errorResponse(res, "Password confirmation does not match");
   }
 
   try {
@@ -95,7 +106,7 @@ const resetPassword = async (req, res) => {
       where: { UserAuthID: userAuth.UserAuthID },
       data: {
         Password: hashedPassword,
-        ResetPasswordToken: null,
+        VerificationCode: null,
         ResetPasswordExpires: null,
       },
     });

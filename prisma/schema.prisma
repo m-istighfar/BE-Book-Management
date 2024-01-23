@@ -14,7 +14,7 @@ model UserAuth {
   Username              String    @unique
   Email                 String    @unique
   Password              String
-  ResetPasswordToken    String?   @unique
+  VerificationCode      String?   @unique
   ResetPasswordExpires  DateTime?
   Verified              Boolean   @default(false)
   VerificationToken     String?   @unique
