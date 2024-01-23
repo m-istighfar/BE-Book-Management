@@ -32,8 +32,80 @@ const determineThickness = (totalPage) => {
 
 exports.getBooks = async (req, res) => {
   try {
-    const books = await prisma.book.findMany();
-    successResponse(res, "Books fetched successfully", books);
+    const {
+      title,
+      minYear,
+      maxYear,
+      minPage,
+      maxPage,
+      sortByTitle,
+      page,
+      limit,
+    } = req.query;
+
+    let queryConditions = {};
+
+    if (title) {
+      queryConditions.Title = {
+        contains: title,
+        mode: "insensitive",
+      };
+    }
+    if (minYear) {
+      queryConditions.ReleaseYear = {
+        ...queryConditions.ReleaseYear,
+        gte: parseInt(minYear),
+      };
+    }
+    if (maxYear) {
+      queryConditions.ReleaseYear = {
+        ...queryConditions.ReleaseYear,
+        lte: parseInt(maxYear),
+      };
+    }
+    if (minPage) {
+      queryConditions.TotalPage = {
+        ...queryConditions.TotalPage,
+        gte: parseInt(minPage),
+      };
+    }
+    if (maxPage) {
+      queryConditions.TotalPage = {
+        ...queryConditions.TotalPage,
+        lte: parseInt(maxPage),
+      };
+    }
+
+    let orderByCondition = {};
+    if (sortByTitle) {
+      orderByCondition.Title = sortByTitle.toLowerCase();
+    }
+
+    const pageNumber = parseInt(page) || 1;
+    const pageSize = parseInt(limit) || 10;
+    const offset = (pageNumber - 1) * pageSize;
+
+    const books = await prisma.book.findMany({
+      where: queryConditions,
+      orderBy: orderByCondition,
+      skip: offset,
+      take: pageSize,
+    });
+
+    const totalRecords = await prisma.book.count({
+      where: queryConditions,
+    });
+
+    const totalPages = Math.ceil(totalRecords / pageSize);
+
+    const response = {
+      totalRecords,
+      books,
+      currentPage: pageNumber,
+      totalPages,
+    };
+
+    successResponse(res, "Books fetched successfully", response);
   } catch (error) {
     errorResponse(res, "Error fetching books: " + error.message, 500);
   }
