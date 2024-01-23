@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^5.7.1",
+    "@prisma/client": "^5.8.1",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
@@ -31,11 +31,9 @@
     "nodemailer": "^6.9.6",
     "nodemailer-smtp-transport": "^2.7.4",
     "nodemon": "^3.0.2",
+    "prisma": "^5.8.1",
     "rotating-file-stream": "^3.1.1",
     "swagger-ui-express": "^5.0.0",
     "yaml": "^2.3.2"
-  },
-  "devDependencies": {
-    "prisma": "^5.7.1"
   }
 }
