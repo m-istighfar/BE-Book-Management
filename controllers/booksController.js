@@ -40,8 +40,7 @@ const invalidateBooksCache = async () => {
 
 exports.getBooks = async (req, res) => {
   try {
-    const queryParams = JSON.stringify(req.query);
-    const cacheKey = `getBooks:${queryParams}`;
+    const cacheKey = `getBooks`;
 
     redis.get(cacheKey, async (error, cachedData) => {
       if (error) throw error;
