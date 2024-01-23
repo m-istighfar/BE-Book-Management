@@ -16,7 +16,7 @@ const validateCategory = (data) => {
 };
 
 const invalidateCategoryRelatedCache = async (categoryId) => {
-  const categoryKeys = await redis.keys("getCategories:*");
+  const categoryKeys = await redis.keys("getCategories");
   for (const key of categoryKeys) {
     await redis.del(key);
   }
@@ -31,6 +31,11 @@ const invalidateCategoryRelatedCache = async (categoryId) => {
 
 exports.getCategories = async (req, res) => {
   try {
+    const { page, limit } = req.query;
+    const pageNumber = parseInt(page) || 1;
+    const pageSize = parseInt(limit) || 10;
+    const offset = (pageNumber - 1) * pageSize;
+
     const cacheKey = `getCategories`;
 
     redis.get(cacheKey, async (error, cachedData) => {
@@ -43,11 +48,24 @@ exports.getCategories = async (req, res) => {
           JSON.parse(cachedData)
         );
       } else {
-        const categories = await prisma.category.findMany();
+        const totalRecords = await prisma.category.count();
+        const totalPages = Math.ceil(totalRecords / pageSize);
 
-        redis.setex(cacheKey, 3600, JSON.stringify(categories));
+        const categories = await prisma.category.findMany({
+          skip: offset,
+          take: pageSize,
+        });
 
-        successResponse(res, "Categories fetched successfully", categories);
+        const response = {
+          totalRecords,
+          categories,
+          currentPage: pageNumber,
+          totalPages,
+        };
+
+        redis.setex(cacheKey, 3600, JSON.stringify(response));
+
+        successResponse(res, "Categories fetched successfully", response);
       }
     });
   } catch (error) {
