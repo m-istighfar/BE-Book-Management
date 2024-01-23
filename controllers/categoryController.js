@@ -126,3 +126,26 @@ exports.deleteCategory = async (req, res) => {
     errorResponse(res, "Error deleting category: " + error.message, 500);
   }
 };
+
+exports.getBooksByCategoryId = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const books = await prisma.book.findMany({
+      where: {
+        CategoryID: parseInt(id),
+      },
+      include: {
+        Category: true,
+      },
+    });
+
+    if (books.length === 0) {
+      return errorResponse(res, "No books found for this category", 404);
+    }
+
+    successResponse(res, "Books fetched successfully", books);
+  } catch (error) {
+    errorResponse(res, "Error fetching books: " + error.message, 500);
+  }
+};
