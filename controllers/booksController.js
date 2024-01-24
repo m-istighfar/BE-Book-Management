@@ -40,100 +40,114 @@ const invalidateBooksCache = async () => {
 
 exports.getBooks = async (req, res) => {
   try {
+    const hasQueryParams = Object.keys(req.query).length > 0;
     const cacheKey = `getBooks`;
 
-    redis.get(cacheKey, async (error, cachedData) => {
-      if (error) throw error;
-
-      if (cachedData) {
-        return successResponse(
-          res,
-          "Books fetched from cache",
-          JSON.parse(cachedData)
-        );
-      } else {
-        const {
-          title,
-          minYear,
-          maxYear,
-          minPage,
-          maxPage,
-          sortByTitle,
-          page,
-          limit,
-        } = req.query;
-
-        let queryConditions = {};
-
-        if (title) {
-          queryConditions.Title = {
-            contains: title,
-            mode: "insensitive",
-          };
-        }
-        if (minYear) {
-          queryConditions.ReleaseYear = {
-            ...queryConditions.ReleaseYear,
-            gte: parseInt(minYear),
-          };
-        }
-        if (maxYear) {
-          queryConditions.ReleaseYear = {
-            ...queryConditions.ReleaseYear,
-            lte: parseInt(maxYear),
-          };
-        }
-        if (minPage) {
-          queryConditions.TotalPage = {
-            ...queryConditions.TotalPage,
-            gte: parseInt(minPage),
-          };
-        }
-        if (maxPage) {
-          queryConditions.TotalPage = {
-            ...queryConditions.TotalPage,
-            lte: parseInt(maxPage),
-          };
+    if (!hasQueryParams) {
+      return redis.get(cacheKey, async (error, cachedData) => {
+        if (error) {
+          return errorResponse(
+            res,
+            "Error accessing cache: " + error.message,
+            500
+          );
         }
 
-        let orderByCondition = {};
-        if (sortByTitle) {
-          orderByCondition.Title = sortByTitle.toLowerCase();
+        if (cachedData) {
+          return successResponse(
+            res,
+            "Books fetched from cache",
+            JSON.parse(cachedData)
+          );
         }
 
-        const pageNumber = parseInt(page) || 1;
-        const pageSize = parseInt(limit) || 10;
-        const offset = (pageNumber - 1) * pageSize;
-
-        const books = await prisma.book.findMany({
-          where: queryConditions,
-          orderBy: orderByCondition,
-          skip: offset,
-          take: pageSize,
-        });
-
-        const totalRecords = await prisma.book.count({
-          where: queryConditions,
-        });
-
-        const totalPages = Math.ceil(totalRecords / pageSize);
-
-        const response = {
-          totalRecords,
-          books,
-          currentPage: pageNumber,
-          totalPages,
-        };
-
+        const response = await fetchBooksFromDatabase({});
         redis.setex(cacheKey, 3600, JSON.stringify(response));
-
         return successResponse(res, "Books fetched successfully", response);
-      }
-    });
+      });
+    }
+
+    const response = await fetchBooksFromDatabase(req.query);
+    return successResponse(res, "Books fetched successfully", response);
   } catch (error) {
-    errorResponse(res, "Error fetching books: " + error.message, 500);
+    return errorResponse(res, "Error fetching books: " + error.message, 500);
   }
 };
+
+async function fetchBooksFromDatabase(query) {
+  const {
+    title,
+    minYear,
+    maxYear,
+    minPage,
+    maxPage,
+    sortByTitle,
+    page,
+    limit,
+  } = query;
+
+  let queryConditions = {};
+
+  if (title) {
+    queryConditions.Title = {
+      contains: title,
+      mode: "insensitive",
+    };
+  }
+  if (minYear) {
+    queryConditions.ReleaseYear = {
+      ...queryConditions.ReleaseYear,
+      gte: parseInt(minYear),
+    };
+  }
+  if (maxYear) {
+    queryConditions.ReleaseYear = {
+      ...queryConditions.ReleaseYear,
+      lte: parseInt(maxYear),
+    };
+  }
+  if (minPage) {
+    queryConditions.TotalPage = {
+      ...queryConditions.TotalPage,
+      gte: parseInt(minPage),
+    };
+  }
+  if (maxPage) {
+    queryConditions.TotalPage = {
+      ...queryConditions.TotalPage,
+      lte: parseInt(maxPage),
+    };
+  }
+
+  let orderByCondition = {};
+  if (sortByTitle) {
+    orderByCondition.Title = sortByTitle.toLowerCase();
+  }
+
+  const pageNumber = parseInt(page) || 1;
+  const pageSize = parseInt(limit) || 10;
+  const offset = (pageNumber - 1) * pageSize;
+
+  const books = await prisma.book.findMany({
+    where: queryConditions,
+    orderBy: orderByCondition,
+    skip: offset,
+    take: pageSize,
+  });
+
+  const totalRecords = await prisma.book.count({
+    where: queryConditions,
+  });
+
+  const totalPages = Math.ceil(totalRecords / pageSize);
+
+  return {
+    totalRecords,
+    books,
+    currentPage: pageNumber,
+    totalPages,
+  };
+}
 
 exports.getBookById = async (req, res) => {
   try {
