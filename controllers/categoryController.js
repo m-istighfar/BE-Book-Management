@@ -31,47 +31,69 @@ const invalidateCategoryRelatedCache = async (categoryId) => {
 
 exports.getCategories = async (req, res) => {
   try {
-    const { page, limit } = req.query;
-    const pageNumber = parseInt(page) || 1;
-    const pageSize = parseInt(limit) || 10;
-    const offset = (pageNumber - 1) * pageSize;
-
+    const hasPaginationParams = "page" in req.query || "limit" in req.query;
     const cacheKey = `getCategories`;
 
-    redis.get(cacheKey, async (error, cachedData) => {
-      if (error) throw error;
+    if (!hasPaginationParams) {
+      return redis.get(cacheKey, async (error, cachedData) => {
+        if (error) {
+          return errorResponse(
+            res,
+            "Error accessing cache: " + error.message,
+            500
+          );
+        }
 
-      if (cachedData) {
+        if (cachedData) {
+          return successResponse(
+            res,
+            "Categories fetched from cache",
+            JSON.parse(cachedData)
+          );
+        }
+
+        const response = await fetchCategoriesFromDatabase({});
+        redis.setex(cacheKey, 3600, JSON.stringify(response));
         return successResponse(
           res,
-          "Categories fetched from cache",
-          JSON.parse(cachedData)
+          "Categories fetched successfully",
+          response
         );
-      } else {
-        const totalRecords = await prisma.category.count();
-        const totalPages = Math.ceil(totalRecords / pageSize);
+      });
+    }
 
-        const categories = await prisma.category.findMany({
-          skip: offset,
-          take: pageSize,
-        });
-
-        const response = {
-          totalRecords,
-          categories,
-          currentPage: pageNumber,
-          totalPages,
-        };
-
-        redis.setex(cacheKey, 3600, JSON.stringify(response));
-
-        successResponse(res, "Categories fetched successfully", response);
-      }
-    });
+    const response = await fetchCategoriesFromDatabase(req.query);
+    return successResponse(res, "Categories fetched successfully", response);
   } catch (error) {
-    errorResponse(res, "Error fetching categories: " + error.message, 500);
+    return errorResponse(
+      res,
+      "Error fetching categories: " + error.message,
+      500
+    );
   }
 };
+
+async function fetchCategoriesFromDatabase(query) {
+  const { page, limit } = query;
+  const pageNumber = parseInt(page) || 1;
+  const pageSize = parseInt(limit) || 10;
+  const offset = (pageNumber - 1) * pageSize;
+
+  const totalRecords = await prisma.category.count();
+  const totalPages = Math.ceil(totalRecords / pageSize);
+
+  const categories = await prisma.category.findMany({
+    skip: offset,
+    take: pageSize,
+  });
+
+  return {
+    totalRecords,
+    categories,
+    currentPage: pageNumber,
+    totalPages,
+  };
+}
 
 exports.getCategoryById = async (req, res) => {
   try {
@@ -180,102 +202,116 @@ exports.deleteCategory = async (req, res) => {
 exports.getBooksByCategoryId = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      title,
-      minYear,
-      maxYear,
-      minPage,
-      maxPage,
-      sortByTitle,
-      page,
-      limit,
-    } = req.query;
-
+    const hasQueryParams = Object.keys(req.query).length > 0;
     const cacheKey = `getBooksByCategory:${id}`;
 
-    redis.get(cacheKey, async (error, cachedData) => {
-      if (error) throw error;
-
-      if (cachedData) {
-        return successResponse(
-          res,
-          "Books fetched from cache",
-          JSON.parse(cachedData)
-        );
-      } else {
-        let queryConditions = {
-          CategoryID: parseInt(id),
-        };
-
-        if (title) {
-          queryConditions.Title = {
-            contains: title,
-            mode: "insensitive",
-          };
-        }
-        if (minYear) {
-          queryConditions.ReleaseYear = {
-            ...queryConditions.ReleaseYear,
-            gte: parseInt(minYear),
-          };
-        }
-        if (maxYear) {
-          queryConditions.ReleaseYear = {
-            ...queryConditions.ReleaseYear,
-            lte: parseInt(maxYear),
-          };
-        }
-        if (minPage) {
-          queryConditions.TotalPage = {
-            ...queryConditions.TotalPage,
-            gte: parseInt(minPage),
-          };
-        }
-        if (maxPage) {
-          queryConditions.TotalPage = {
-            ...queryConditions.TotalPage,
-            lte: parseInt(maxPage),
-          };
+    if (!hasQueryParams) {
+      return redis.get(cacheKey, async (error, cachedData) => {
+        if (error) {
+          return errorResponse(
+            res,
+            "Error accessing cache: " + error.message,
+            500
+          );
         }
 
-        let orderByCondition = {};
-        if (sortByTitle) {
-          orderByCondition.Title = sortByTitle.toLowerCase();
+        if (cachedData) {
+          return successResponse(
+            res,
+            "Books fetched from cache",
+            JSON.parse(cachedData)
+          );
         }
 
-        const pageNumber = parseInt(page) || 1;
-        const pageSize = parseInt(limit) || 10;
-        const offset = (pageNumber - 1) * pageSize;
-
-        const books = await prisma.book.findMany({
-          where: queryConditions,
-          orderBy: orderByCondition,
-          skip: offset,
-          take: pageSize,
-          include: {
-            Category: true,
-          },
-        });
-
-        const totalRecords = await prisma.book.count({
-          where: queryConditions,
-        });
-
-        const totalPages = Math.ceil(totalRecords / pageSize);
-
-        const response = {
-          totalRecords,
-          books,
-          currentPage: pageNumber,
-          totalPages,
-        };
-
+        const response = await fetchBooksByCategoryFromDatabase(id, {});
         redis.setex(cacheKey, 3600, JSON.stringify(response));
+        return successResponse(res, "Books fetched successfully", response);
+      });
+    }
 
-        successResponse(res, "Books fetched successfully", response);
-      }
-    });
+    const response = await fetchBooksByCategoryFromDatabase(id, req.query);
+    return successResponse(res, "Books fetched successfully", response);
   } catch (error) {
-    errorResponse(res, "Error fetching books: " + error.message, 500);
+    return errorResponse(res, "Error fetching books: " + error.message, 500);
   }
 };
+
+async function fetchBooksByCategoryFromDatabase(categoryId, query) {
+  const {
+    title,
+    minYear,
+    maxYear,
+    minPage,
+    maxPage,
+    sortByTitle,
+    page,
+    limit,
+  } = query;
+
+  let queryConditions = {
+    CategoryID: parseInt(categoryId),
+  };
+
+  if (title) {
+    queryConditions.Title = {
+      contains: title,
+      mode: "insensitive",
+    };
+  }
+  if (minYear) {
+    queryConditions.ReleaseYear = {
+      ...queryConditions.ReleaseYear,
+      gte: parseInt(minYear),
+    };
+  }
+  if (maxYear) {
+    queryConditions.ReleaseYear = {
+      ...queryConditions.ReleaseYear,
+      lte: parseInt(maxYear),
+    };
+  }
+  if (minPage) {
+    queryConditions.TotalPage = {
+      ...queryConditions.TotalPage,
+      gte: parseInt(minPage),
+    };
+  }
+  if (maxPage) {
+    queryConditions.TotalPage = {
+      ...queryConditions.TotalPage,
+      lte: parseInt(maxPage),
+    };
+  }
+
+  let orderByCondition = {};
+  if (sortByTitle) {
+    orderByCondition.Title = sortByTitle.toLowerCase();
+  }
+
+  const pageNumber = parseInt(page) || 1;
+  const pageSize = parseInt(limit) || 10;
+  const offset = (pageNumber - 1) * pageSize;
+
+  const books = await prisma.book.findMany({
+    where: queryConditions,
+    orderBy: orderByCondition,
+    skip: offset,
+    take: pageSize,
+    include: {
+      Category: true,
+    },
+  });
+
+  const totalRecords = await prisma.book.count({
+    where: queryConditions,
+  });
+
+  const totalPages = Math.ceil(totalRecords / pageSize);
+
+  return {
+    totalRecords,
+    books,
+    currentPage: pageNumber,
+    totalPages,
+  };
+}
