@@ -25,7 +25,7 @@ const file = fs.readFileSync(openApiPath, "utf8");
 const swaggerDocument = yaml.parse(file);
 
 app.get("/", (req, res) => {
-  res.send("Welcome to the API!");
+  res.send("Welcome to the API!!");
 });
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use("/auth", authRoutes);
