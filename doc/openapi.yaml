@@ -1,0 +1,365 @@
+openapi: 3.0.0
+info:
+  title: Backend_SanberTask!
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+components:
+  securitySchemes:
+    noauthAuth:
+      type: http
+      scheme: noauth
+tags:
+  - name: Authentication
+  - name: Category
+  - name: Book
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                username: tifar1
+                email: m.istighfaramal@gmail.com
+                password: '123456'
+                name: M. Istighfar Amal
+                phone: '+6289512311232'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /auth/verify-email/{token}:
+    get:
+      tags:
+        - Authentication
+      summary: Verify Email
+      security:
+        - noauthAuth: []
+      parameters:
+        - name: token
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                username: tifar1
+                password: '123456'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /auth/request-password-reset:
+    post:
+      tags:
+        - Authentication
+      summary: Request Reset Password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                email: m.istighfaramal@gmail.com
+      security:
+        - noauthAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Create New Password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                verificationCode: '11'
+                newPassword: '1234567'
+                confirmPassword: '1234567'
+      security:
+        - noauthAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /categories:
+    get:
+      tags:
+        - Category
+      summary: Get All Category With Query
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+    post:
+      tags:
+        - Category
+      summary: Create a Category
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Fiction
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /categories/{id}:
+    get:
+      tags:
+        - Category
+      summary: Get Category by ID
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+    patch:
+      tags:
+        - Category
+      summary: Update a Category
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Fact
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+    delete:
+      tags:
+        - Category
+      summary: Delete a Category
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /categories/{id}/books:
+    get:
+      tags:
+        - Category
+      summary: Get Book by Category ID With Query
+      parameters:
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: maxYear
+          in: query
+          schema:
+            type: string
+        - name: minPage
+          in: query
+          schema:
+            type: string
+        - name: maxPage
+          in: query
+          schema:
+            type: string
+        - name: sortByTitle
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: string
+        - name: minYear
+          in: query
+          schema:
+            type: string
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /books:
+    get:
+      tags:
+        - Book
+      summary: Get All Book With Query
+      parameters:
+        - name: minPage
+          in: query
+          schema:
+            type: string
+        - name: maxPage
+          in: query
+          schema:
+            type: string
+        - name: sortByTitle
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: string
+        - name: minYear
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+    post:
+      tags:
+        - Book
+      summary: Create a Book
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                title: Diponegoro
+                description: Karya Chairil Anwar
+                imageUrl: https://example.com/book-image.jpg
+                releaseYear: 2021
+                price: '100.000'
+                totalPage: 2500
+                categoryID: 5
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /books/{id}:
+    get:
+      tags:
+        - Book
+      summary: Get Book by ID
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+    patch:
+      tags:
+        - Book
+      summary: Update a Book
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                title: Aku
+                description: Karya Chairil Anwar
+                imageUrl: https://example.com/book-image.jpg
+                releaseYear: 2021
+                price: '100.000'
+                totalPage: 2500
+                categoryID: 5
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+    delete:
+      tags:
+        - Book
+      summary: Delete a Book
+      parameters:
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
