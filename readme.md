@@ -39,7 +39,7 @@ This repository contains the backend component for the Sanbercode Bootcamp Schol
 
 ## Getting Started
 
-To get the server running locally  :
+To get the server running locally   :
 
 - Clone this repo
 - `npm install` to install all required dependencies
