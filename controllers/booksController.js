@@ -84,6 +84,7 @@ async function fetchBooksFromDatabase(query) {
     sortByTitle,
     page,
     limit,
+    categoryID,
   } = query;
 
   let queryConditions = {};
@@ -124,6 +125,10 @@ async function fetchBooksFromDatabase(query) {
     orderByCondition.Title = sortByTitle.toLowerCase();
   }
 
+  if (categoryID) {
+    queryConditions.CategoryID = parseInt(categoryID);
+  }
+
   const pageNumber = parseInt(page) || 1;
   const pageSize = parseInt(limit) || 10;
   const offset = (pageNumber - 1) * pageSize;
@@ -133,6 +138,9 @@ async function fetchBooksFromDatabase(query) {
     orderBy: orderByCondition,
     skip: offset,
     take: pageSize,
+    include: {
+      Category: true,
+    },
   });
 
   const totalRecords = await prisma.book.count({

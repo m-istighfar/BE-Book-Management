@@ -75,6 +75,17 @@ exports.getCategories = async (req, res) => {
 
 async function fetchCategoriesFromDatabase(query) {
   const { page, limit } = query;
+
+  if (!limit) {
+    const categories = await prisma.category.findMany();
+    return {
+      totalRecords: categories.length,
+      categories,
+      currentPage: 1,
+      totalPages: 1,
+    };
+  }
+
   const pageNumber = parseInt(page) || 1;
   const pageSize = parseInt(limit) || 10;
   const offset = (pageNumber - 1) * pageSize;
@@ -202,6 +213,7 @@ exports.deleteCategory = async (req, res) => {
 exports.getBooksByCategoryId = async (req, res) => {
   try {
     const { id } = req.params;
+
     const hasQueryParams = Object.keys(req.query).length > 0;
     const cacheKey = `getBooksByCategory:${id}`;
 
