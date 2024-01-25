@@ -183,6 +183,16 @@ exports.createBook = async (req, res) => {
       categoryID,
     } = req.body;
 
+    const categoryIDInt = parseInt(categoryID, 10);
+    if (isNaN(categoryIDInt)) {
+      return errorResponse(res, "Invalid category ID", 400);
+    }
+
+    const totalPageInt = parseInt(totalPage, 10);
+    if (isNaN(totalPageInt)) {
+      return errorResponse(res, "Invalid total pages", 400);
+    }
+
     const thickness = determineThickness(totalPage);
 
     const existingBook = await prisma.book.findUnique({
@@ -193,7 +203,7 @@ exports.createBook = async (req, res) => {
     }
 
     const categoryExists = await prisma.category.findUnique({
-      where: { CategoryID: categoryID },
+      where: { CategoryID: categoryIDInt },
     });
     if (!categoryExists) {
       return errorResponse(res, "Category not found", 404);
@@ -206,8 +216,8 @@ exports.createBook = async (req, res) => {
         ImageUrl: imageUrl,
         ReleaseYear: releaseYear,
         Price: price,
-        TotalPage: totalPage,
-        CategoryID: categoryID,
+        TotalPage: totalPageInt,
+        CategoryID: categoryIDInt,
         Thickness: thickness,
       },
     });
@@ -222,18 +232,6 @@ exports.createBook = async (req, res) => {
 exports.updateBook = async (req, res) => {
   try {
     const { id } = req.params;
-    const validationError = validateBook(req.body);
-    if (validationError) {
-      return errorResponse(res, validationError);
-    }
-
-    const bookExists = await prisma.book.findUnique({
-      where: { BookID: parseInt(id) },
-    });
-    if (!bookExists) {
-      return errorResponse(res, "Book not found", 404);
-    }
-
     const {
       title,
       description,
@@ -243,6 +241,28 @@ exports.updateBook = async (req, res) => {
       totalPage,
       categoryID,
     } = req.body;
+    const validationError = validateBook(req.body);
+    if (validationError) {
+      return errorResponse(res, validationError);
+    }
+
+    const categoryIDInt = parseInt(categoryID, 10);
+    if (isNaN(categoryIDInt)) {
+      return errorResponse(res, "Invalid category ID", 400);
+    }
+
+    const totalPageInt = parseInt(totalPage, 10);
+    if (isNaN(totalPageInt)) {
+      return errorResponse(res, "Invalid total pages", 400);
+    }
+
+    const bookExists = await prisma.book.findUnique({
+      where: { BookID: parseInt(id) },
+    });
+    if (!bookExists) {
+      return errorResponse(res, "Book not found", 404);
+    }
+
     const thickness = determineThickness(totalPage);
 
     const existingBookWithTitle = await prisma.book.findFirst({
@@ -257,7 +277,7 @@ exports.updateBook = async (req, res) => {
     }
 
     const categoryExists = await prisma.category.findUnique({
-      where: { CategoryID: categoryID },
+      where: { CategoryID: categoryIDInt },
     });
     if (!categoryExists) {
       return errorResponse(res, "Category not found", 404);
@@ -271,8 +291,8 @@ exports.updateBook = async (req, res) => {
         ImageUrl: imageUrl,
         ReleaseYear: releaseYear,
         Price: price,
-        TotalPage: totalPage,
-        CategoryID: categoryID,
+        TotalPage: totalPageInt,
+        CategoryID: categoryIDInt,
         Thickness: thickness,
       },
     });
