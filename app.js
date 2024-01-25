@@ -9,7 +9,6 @@ const swaggerUi = require("swagger-ui-express");
 const yaml = require("yaml");
 const fs = require("fs");
 
-const authMiddleware = require("./middleware/authenticationMiddleware");
 const errorFormatter = require("./middleware/errorFormatter");
 const applyMiddleware = require("./middleware/index");
 

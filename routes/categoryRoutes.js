@@ -5,9 +5,9 @@ const authMiddleware = require("../middleware/authenticationMiddleware");
 
 router.get("/", categoryController.getCategories);
 router.get("/:id", categoryController.getCategoryById);
-router.post("/", categoryController.createCategory);
-router.patch("/:id", categoryController.updateCategory);
-router.delete("/:id", categoryController.deleteCategory);
+router.post("/", authMiddleware, categoryController.createCategory);
+router.patch("/:id", authMiddleware, categoryController.updateCategory);
+router.delete("/:id", authMiddleware, categoryController.deleteCategory);
 router.get("/:id/books", categoryController.getBooksByCategoryId);
 
 module.exports = router;
