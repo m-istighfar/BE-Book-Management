@@ -1,7 +1,10 @@
 const cors = require("cors");
 
 module.exports = (app) => {
-  const allowedOrigins = ["http://localhost:5173"];
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "https://frontend-sanbertask.netlify.app",
+  ];
 
   const corsOptions = {
     origin: function (origin, callback) {
