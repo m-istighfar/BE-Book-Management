@@ -3,7 +3,11 @@ info:
   title: Backend_SanberTask!
   version: 1.0.0
 servers:
+  - url: https://good-jade-betta-tam.cyclic.app
+    description: Production server
   - url: http://localhost:3000
+    description: Development server
+  
 components:
   securitySchemes:
     noauthAuth:

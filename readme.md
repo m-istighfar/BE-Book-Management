@@ -1,5 +1,13 @@
 # Backend API Documentation - Sanbercode Bootcamp Scholarship
 
+## Live Deployment
+
+- [Backend API](https://good-jade-betta-tam.cyclic.app)
+
+## API Documentation
+- [Swagger UI](https://good-jade-betta-tam.cyclic.app/api-docs)
+- [Postman](https://documenter.getpostman.com/view/28996754/2s9YypFNsH)
+
 ## Overview
 
 This repository contains the backend component for the Sanbercode Bootcamp Scholarship's Technical Skill Assessment. The backend is built using Express.js and provides a RESTful API for managing Books and Categories, along with user authentication.
