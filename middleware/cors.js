@@ -5,6 +5,7 @@ module.exports = (app) => {
     "http://localhost:5173",
     "https://frontend-sanbertask.netlify.app",
     "http://localhost:3000",
+    "https://good-jade-betta-tam.cyclic.app",
   ];
 
   const corsOptions = {
