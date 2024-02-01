@@ -7,12 +7,11 @@ servers:
     description: Production server
   - url: http://localhost:3000
     description: Development server
-  
 components:
   securitySchemes:
-    noauthAuth:
+    bearerAuth:
       type: http
-      scheme: noauth
+      scheme: bearer
 tags:
   - name: Authentication
   - name: Category
@@ -44,8 +43,6 @@ paths:
       tags:
         - Authentication
       summary: Verify Email
-      security:
-        - noauthAuth: []
       parameters:
         - name: token
           in: path
@@ -87,8 +84,6 @@ paths:
               type: object
               example:
                 email: m.istighfaramal@gmail.com
-      security:
-        - noauthAuth: []
       responses:
         '200':
           description: Successful response
@@ -108,8 +103,6 @@ paths:
                 verificationCode: '11'
                 newPassword: '1234567'
                 confirmPassword: '1234567'
-      security:
-        - noauthAuth: []
       responses:
         '200':
           description: Successful response
@@ -145,6 +138,8 @@ paths:
               type: object
               example:
                 name: Fiction
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Successful response
@@ -177,6 +172,8 @@ paths:
               type: object
               example:
                 name: Fact
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -192,6 +189,8 @@ paths:
       tags:
         - Category
       summary: Delete a Category
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -303,6 +302,8 @@ paths:
                 price: '100.000'
                 totalPage: 2500
                 categoryID: 5
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Successful response
@@ -341,6 +342,8 @@ paths:
                 price: '100.000'
                 totalPage: 2500
                 categoryID: 5
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -356,6 +359,8 @@ paths:
       tags:
         - Book
       summary: Delete a Book
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path

@@ -12,7 +12,7 @@ function errorFormatter(err, req, res, next) {
   }
 
   return res.status(500).json({
-    error: "Internal Server Error",
+    error: err.message || "Internal Server Error",
   });
 }
 

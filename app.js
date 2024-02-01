@@ -17,16 +17,18 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const booksRoutes = require("./routes/booksRoutes");
 
 const app = express();
+
 applyMiddleware(app);
 
 const openApiPath = "doc/openapi.yaml";
 const file = fs.readFileSync(openApiPath, "utf8");
 const swaggerDocument = yaml.parse(file);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/", (req, res) => {
   res.send("Welcome to the API!!");
 });
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 app.use("/auth", authRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/books", booksRoutes);
